@@ -1,4 +1,4 @@
-package ra.security.security;
+package ra.security.jwt.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
