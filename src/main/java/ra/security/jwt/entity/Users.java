@@ -13,7 +13,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Getter
 @Setter
-public class User {
+public class Users {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
