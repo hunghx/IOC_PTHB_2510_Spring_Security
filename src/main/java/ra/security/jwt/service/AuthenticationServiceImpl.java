@@ -1,37 +1,40 @@
 package ra.security.jwt.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ra.security.jwt.dto.FormLogin;
 import ra.security.jwt.dto.FormRegister;
+import ra.security.jwt.dto.JwtResponse;
 import ra.security.jwt.entity.Role;
 import ra.security.jwt.entity.RoleName;
 import ra.security.jwt.entity.Users;
-import ra.security.jwt.principle.UserDetailCustom;
 import ra.security.jwt.repository.IRoleRepository;
 import ra.security.jwt.repository.IUserRepository;
+import ra.security.jwt.security.jwt.JwtService;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
 @Service
+@RequiredArgsConstructor
 public class AuthenticationServiceImpl implements IAuthenticationService{
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private PasswordEncoder encoder;
-    @Autowired
-    private IRoleRepository roleRepository;
+    private final AuthenticationManager authenticationManager;
+    private final PasswordEncoder encoder;
+    private final IRoleRepository roleRepository;
+    private final JwtService jwtService;
 
     @Autowired
     private IUserRepository userRepository;
+    @Value("${jwt.expired}")
+    private long expired;
     @Override
     public void register(FormRegister dto) {
         // biến đổi dto -> entity
@@ -50,7 +53,6 @@ public class AuthenticationServiceImpl implements IAuthenticationService{
                 switch (r.toLowerCase()){
                     case "admin":
                         roleSet.add(roleRepository.findByRoleName(RoleName.ROLE_ADMIN).orElseThrow());
-                        break;
                     case "user":
                         roleSet.add(roleRepository.findByRoleName(RoleName.ROLE_USER).orElseThrow());
                         break;
@@ -65,18 +67,22 @@ public class AuthenticationServiceImpl implements IAuthenticationService{
     }
 
     @Override
-    public Users login(FormLogin dto) {
+    public JwtResponse login(FormLogin dto) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(dto
                             .getEmail(),dto.getPassword())
             );
-            // xác minh thznh công
-            String u = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            System.out.println("email" + u);
 
+            String accessToken = jwtService.generateAccessToken(dto.getEmail());
+            String refreshToken = jwtService.generateRefreshToken(dto.getEmail());
             // trả về token
-            return userRepository.findByEmail(dto.getEmail()).orElseThrow();
+            return JwtResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .user(userRepository.findByEmail(dto.getEmail()).orElseThrow())
+                    .expired(new Date(new Date().getTime()+expired))
+                    .build();
         }catch (Exception e){
             return null;
         }

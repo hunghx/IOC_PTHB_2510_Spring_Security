@@ -1,4 +1,4 @@
-package ra.security.jwt.principle;
+package ra.security.jwt.security.principle;
 
 
 import lombok.Builder;

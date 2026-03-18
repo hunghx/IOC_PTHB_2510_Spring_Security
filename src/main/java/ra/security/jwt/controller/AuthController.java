@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ra.security.jwt.dto.FormLogin;
 import ra.security.jwt.dto.FormRegister;
+import ra.security.jwt.dto.JwtResponse;
 import ra.security.jwt.service.IAuthenticationService;
 
 @RestController
@@ -29,7 +30,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> register(@RequestBody FormLogin dto){
         // mật khẩu phải mã hóa
-
-        return new ResponseEntity<>(authenticationService.login(dto), HttpStatus.CREATED);
+        JwtResponse r = authenticationService.login(dto);
+        return new ResponseEntity<>(r, HttpStatus.OK);
     }
 }

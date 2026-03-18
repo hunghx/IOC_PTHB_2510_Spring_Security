@@ -1,4 +1,4 @@
-package ra.security.jwt.principle;
+package ra.security.jwt.security.principle;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
