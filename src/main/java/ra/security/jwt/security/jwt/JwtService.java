@@ -26,7 +26,7 @@ public class JwtService {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime()+expired))
+                .setExpiration(new Date(now.getTime()+60))
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -46,8 +46,6 @@ public class JwtService {
             return true;
         }catch (MalformedJwtException e){
             log.error("Invalid token ",e.getMessage());
-        }catch (ExpiredJwtException e){
-            log.error("Expired token ",e.getMessage());
         }catch (UnsupportedJwtException e){
             log.error("Unsupported token ",e.getMessage());
         }catch (IllegalArgumentException e){

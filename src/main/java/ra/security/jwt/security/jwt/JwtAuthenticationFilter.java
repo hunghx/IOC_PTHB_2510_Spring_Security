@@ -1,5 +1,6 @@
 package ra.security.jwt.security.jwt;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,16 +24,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
             // chặn request lại để lọc token
         String token = getTokenFromRequest(request);
-        if (token!=null&& jwtService.validateToken(token)){
-            // giải mã
-            String username = jwtService.getUserNameFromToken(token);
-            // load userdetail
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        try {
+            if (token != null && jwtService.validateToken(token)) {
+                // giải mã
+                String username = jwtService.getUserNameFromToken(token);
+                // load userdetail
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            // lưu vào SecurityContext
-            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails,null, userDetails.getAuthorities()));
+                // lưu vào SecurityContext
+                SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()));
+            }
+        }catch (ExpiredJwtException e){
+            // thêm vào request 1 attribute
+            request.setAttribute("exception","ExpiredJwtException");
         }
-        filterChain.doFilter(request,response); // gửi request đi tiếp tới cac tầng tiếp theo
+        filterChain.doFilter(request, response);
+        // gửi request đi tiếp tới cac tầng tiếp theo
     }
 
     private String getTokenFromRequest(HttpServletRequest request){

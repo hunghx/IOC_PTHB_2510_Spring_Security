@@ -20,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import ra.security.jwt.security.exception.AccessDeniedHandler;
+import ra.security.jwt.security.exception.AuthenticationEntryPointHandler;
 import ra.security.jwt.security.jwt.JwtAuthenticationFilter;
 
 @Configuration
@@ -34,37 +36,41 @@ public class SecurityConfig {
     // Bean cấu hình bộ lọc request
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
-        http.csrf(crsf-> crsf.disable()) // tắt csrf
-                .cors(cors->cors.disable()) // tắt cors // www.rikkei.vn
-        // phân quyền
-                .authorizeHttpRequests(authorize->
-                        authorize.requestMatchers("/api/v1/auth/**").permitAll() // truy cập công khai
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf(crsf -> crsf.disable()) // tắt csrf
+                .cors(cors -> cors.disable()) // tắt cors // www.rikkei.vn
+                // phân quyền
+                .authorizeHttpRequests(authorize ->
+                                authorize.requestMatchers("/api/v1/auth/**").permitAll() // truy cập công khai
 //                                .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
-                                .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
-                                .requestMatchers("/api/v1/user/**").hasAuthority("ROLE_USER")
-                                .requestMatchers("/api/v1/admin-user/**").hasAnyAuthority("ROLE_ADMIN","ROLE_USER")
-                                .anyRequest().authenticated() // phải xác thực trước
+                                        .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
+                                        .requestMatchers("/api/v1/user/**").hasAuthority("ROLE_USER")
+                                        .requestMatchers("/api/v1/admin-user/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
+                                        .anyRequest().authenticated() // phải xác thực trước
                 )
-                .sessionManagement(session-> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // tắt session đi : phi trạng thái
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // tắt session đi : phi trạng thái
                 .authenticationProvider(authenticationProvider())
+                .exceptionHandling(ex ->
+                        ex.accessDeniedHandler(new AccessDeniedHandler())
+                                .authenticationEntryPoint(new AuthenticationEntryPointHandler())
+                )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
     // Password encoder
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(); // sử dụng Java Bcrypt để mã hóa mật khẩu
     }
 
     @Bean // cung cap cơ ché xác thực
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws  Exception{
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(){ // xác thực thong qua username và pass
+    public AuthenticationProvider authenticationProvider() { // xác thực thong qua username và pass
         DaoAuthenticationProvider dao = new DaoAuthenticationProvider(userDetailsService);
         dao.setPasswordEncoder(passwordEncoder());
         return dao;
